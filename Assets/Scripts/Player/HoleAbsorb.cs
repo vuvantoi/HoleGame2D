@@ -4,10 +4,13 @@
 public class HoleAbsorb : MonoBehaviour
 {
     private HoleSize holeSize;
-
+    // define audio clip
+    public AudioClip absorbSound;
+    private AudioSource audioSource;
     private void Awake()
     {
         holeSize = GetComponent<HoleSize>();
+        audioSource = gameObject.GetComponent<AudioSource>();
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -37,6 +40,9 @@ public class HoleAbsorb : MonoBehaviour
 
         // Bắt đầu hút
         StartCoroutine(AbsorbRoutine(target.transform));
+        // check if if sound is being played
+        if (audioSource.isPlaying) return;
+        audioSource.PlayOneShot(absorbSound);
         Debug.Log($"[ABSORB] Absorbed: {target.name}, Score: {score}");
 
         PointPopupManager.Instance.ShowPoint(transform.position, (int)score);
