@@ -10,8 +10,8 @@ public class ScoreManager : SingletonBase<ScoreManager>
     [SerializeField] private int startLevelIndex = 0;
     private int lastStartLevelIndex = -1;
 
-    [SerializeField] private float totalScore = 0f;
-    private int currentLevelIndex = 0;
+    [SerializeField] public float totalScore = 0f;
+    public int currentLevelIndex = 0;
 
     private HoleSize holeSize;
 
