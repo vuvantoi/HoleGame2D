@@ -1470,9 +1470,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1f7c6609786917b4e9c4d94fef5dfe72, type: 2}
   - {fileID: 11400000, guid: e2524642407727148922912b2fbec4bb, type: 2}
   cameraZoomController: {fileID: 933161421}
-  startLevelIndex: 1
+  startLevelIndex: 0
   totalScore: 0
-  currentLevelIndex: 0
 --- !u!4 &2118504196 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4675320161858597015, guid: 9fc7f52cf0d25434691d3f98d0be1c8b, type: 3}

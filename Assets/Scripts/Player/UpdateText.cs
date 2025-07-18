@@ -14,7 +14,7 @@ public class UpdateText : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        scoreView.text = $"Score: {ScoreManager.Instance.totalScore}";
-        levelView.text = $"Level: {ScoreManager.Instance.currentLevelIndex}";
+        scoreView.text = $"Score: {ScoreManager.Instance.GetScore()}";
+        levelView.text = $"Level: {ScoreManager.Instance.GetCurrentLevel()}";
     }
 }
