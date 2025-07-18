@@ -28,9 +28,18 @@ public class HoleAbsorb : MonoBehaviour
     private void Absorb(AbsorbableObject target)
     {
         float score = target.GetScore();
+       
+
+        // Cộng điểm và hiện popup
         ScoreManager.Instance.AddScore(score);
+
+        
+
+        // Bắt đầu hút
         StartCoroutine(AbsorbRoutine(target.transform));
         Debug.Log($"[ABSORB] Absorbed: {target.name}, Score: {score}");
+
+        PointPopupManager.Instance.ShowPoint(transform.position, (int)score);
     }
 
     private System.Collections.IEnumerator AbsorbRoutine(Transform target)
@@ -62,7 +71,7 @@ public class HoleAbsorb : MonoBehaviour
 
         if (target != null && target.gameObject != null)
         {
-            Destroy(target.gameObject);
+            target.gameObject.SetActive(false);
             Debug.Log("Return to pool (sau này)");
         }
     }
