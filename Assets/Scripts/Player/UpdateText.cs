@@ -12,9 +12,11 @@ public class UpdateText : SingletonBase<UpdateText>
     public bool isSprintButtonPressed = false;
     void Start()
     {
-        scoreView = GameObject.Find("ScoreView").GetComponent<TextMeshProUGUI>();
-        levelView = GameObject.Find("LevelView").GetComponent<TextMeshProUGUI>();
+
+        scoreView = GameObject.Find("UI_ScoreView").GetComponent<TextMeshProUGUI>();
+        levelView = GameObject.Find("UI_LevelView").GetComponent<TextMeshProUGUI>();
         staminaView = GameObject.Find("StaminaView").GetComponent<TextMeshProUGUI>();
+
     }
 
     // Update is called once per frame
