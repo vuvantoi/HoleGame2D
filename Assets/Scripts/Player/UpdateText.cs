@@ -7,8 +7,8 @@ public class UpdateText : MonoBehaviour
     private TextMeshProUGUI levelView;
     void Start()
     {
-        scoreView = GameObject.Find("ScoreView").GetComponent<TextMeshProUGUI>();
-        levelView = GameObject.Find("LevelView").GetComponent<TextMeshProUGUI>();
+        scoreView = GameObject.Find("UI_ScoreView").GetComponent<TextMeshProUGUI>();
+        levelView = GameObject.Find("UI_LevelView").GetComponent<TextMeshProUGUI>();
     }
 
     // Update is called once per frame
