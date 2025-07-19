@@ -30,6 +30,19 @@ public class PlayerMovement : MonoBehaviour
             if (stamina < 0) stamina = 0; // Prevent negative stamina
             moveSpeed = fasterMoveSpeed;
         }
+        else if (UpdateText.Instance.isSprintButtonPressed) //check if ui button is pressed
+        {
+            // You can handle sprint logic here if needed
+            // For example, set moveSpeed = fasterMoveSpeed;
+            moveSpeed = fasterMoveSpeed;
+            if (rb.linearVelocity.magnitude > 0)
+            {
+                stamina -= staminaCostPerSecond * Time.deltaTime; // Decrease stamina while sprinting
+                UpdateText.UpdateStamina(stamina); // Update stamina UI
+            }
+            if (stamina < 0) stamina = 0; // Prevent negative stamina
+        }
+
         else
         {
             moveSpeed = normalMoveSpeed; // Reset to default speed

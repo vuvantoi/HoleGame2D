@@ -1,12 +1,15 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
-public class UpdateText : MonoBehaviour
+using NUnit.Framework;
+using UnityEngine.EventSystems;
+public class UpdateText : SingletonBase<UpdateText>
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private TextMeshProUGUI scoreView;
     private TextMeshProUGUI levelView;
-
     private static TextMeshProUGUI staminaView;
+    public bool isSprintButtonPressed = false;
     void Start()
     {
 
@@ -17,14 +20,18 @@ public class UpdateText : MonoBehaviour
     }
 
     // Update is called once per frame
+
     void Update()
     {
         scoreView.text = $"Score: {ScoreManager.Instance.GetScore()}";
         levelView.text = $"Level: {ScoreManager.Instance.GetCurrentLevel()}";
     }
+
     public static void UpdateStamina(float stamina)
     {
-        staminaView.text = $"Stamina: {stamina:F1}"; // Display stamina with one decimal place
+        staminaView.text = $"Stamina: {stamina:F0}"; // Display stamina with no decimal places
     }
-}   
+    
+
+}  
 
