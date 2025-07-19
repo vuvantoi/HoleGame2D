@@ -32,14 +32,17 @@ public class HoleAbsorb : MonoBehaviour
     {
         float score = target.GetScore();
        
+
         // Cộng điểm và hiện popup
         ScoreManager.Instance.AddScore(score);
+
+        
 
         // Bắt đầu hút
         StartCoroutine(AbsorbRoutine(target.transform));
         // check if if sound is being played
-        if (absorbSound != null)
-            audioSource.PlayOneShot(absorbSound);
+        if (audioSource.isPlaying) return;
+        audioSource.PlayOneShot(absorbSound);
         Debug.Log($"[ABSORB] Absorbed: {target.name}, Score: {score}");
 
         PointPopupManager.Instance.ShowPoint(transform.position, (int)score);
@@ -74,11 +77,8 @@ public class HoleAbsorb : MonoBehaviour
 
         if (target != null && target.gameObject != null)
         {
-            AbsorbableObject absorbable = target.GetComponent<AbsorbableObject>();
-            if (absorbable != null)
-            {
-                absorbable.ReturnToPool();
-            }
+            target.gameObject.SetActive(false);
+            Debug.Log("Return to pool (sau này)");
         }
     }
 

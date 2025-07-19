@@ -20,9 +20,7 @@ public class PointPopup : MonoBehaviour
         timer += Time.deltaTime;
 
         if (timer > duration)
-        {
-            timer = 0f;
-            PointPopupPool.Instance.Return(gameObject);
-        }
+            Destroy(gameObject);
+            Debug.Log("Cần pooling");
     }
 }

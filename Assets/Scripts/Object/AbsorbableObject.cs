@@ -1,4 +1,3 @@
-﻿using System.Collections;
 using UnityEngine;
 
 public class AbsorbableObject : MonoBehaviour
@@ -6,15 +5,6 @@ public class AbsorbableObject : MonoBehaviour
     public AbsorbableObjectData data;
 
     [SerializeField] private SpriteRenderer spriteRenderer;
-
-    private Vector3 originalPosition;
-    private Vector3 originalScale;
-
-    private void Awake()
-    {
-        originalPosition = transform.position;
-        originalScale = transform.localScale;
-    }
 
     private void Start()
     {
@@ -41,17 +31,4 @@ public class AbsorbableObject : MonoBehaviour
 
     public float GetSize() => data?.objectSize ?? 0.5f;
     public float GetScore() => data?.scoreValue ?? 1f;
-
-    public void ReturnToPool()
-    {
-        gameObject.SetActive(false);
-        RespawnManager.Instance.RespawnAfterDelay(this, data.respawnDelay); // ✅ Sử dụng manager chạy coroutine
-    }
-
-    public void Respawn()
-    {
-        transform.position = originalPosition;
-        transform.localScale = originalScale;
-        gameObject.SetActive(true);
-    }
 }
