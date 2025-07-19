@@ -6,21 +6,7 @@ public class UpdateText : MonoBehaviour
     private TextMeshProUGUI scoreView;
     private TextMeshProUGUI levelView;
 
-    private TextMeshProUGUI staminaView;
-
-    public static UpdateText Instance;
-
-    private void Awake()
-    {
-        if (Instance == null)
-        {
-            Instance = this;  // Assign the singleton
-        }
-        else
-        {
-            Destroy(gameObject);  // Prevent duplicates
-        }
-    }
+    private static TextMeshProUGUI staminaView;
     void Start()
     {
         scoreView = GameObject.Find("ScoreView").GetComponent<TextMeshProUGUI>();
@@ -34,7 +20,7 @@ public class UpdateText : MonoBehaviour
         scoreView.text = $"Score: {ScoreManager.Instance.GetScore()}";
         levelView.text = $"Level: {ScoreManager.Instance.GetCurrentLevel()}";
     }
-    public void UpdateStamina(float stamina)
+    public static void UpdateStamina(float stamina)
     {
         staminaView.text = $"Stamina: {stamina:F1}"; // Display stamina with one decimal place
     }

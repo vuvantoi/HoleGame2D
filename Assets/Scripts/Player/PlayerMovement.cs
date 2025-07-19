@@ -24,7 +24,7 @@ public class PlayerMovement : MonoBehaviour
             if (rb.linearVelocity.magnitude > 0)
             {
                 stamina -= staminaCostPerSecond * Time.deltaTime; // Decrease stamina while sprinting
-                UpdateText.Instance.UpdateStamina(stamina); // Update stamina UI
+                UpdateText.UpdateStamina(stamina); // Update stamina UI
             }
 
             if (stamina < 0) stamina = 0; // Prevent negative stamina
@@ -37,7 +37,7 @@ public class PlayerMovement : MonoBehaviour
             if (stamina < 100f) // Regenerate stamina when not sprinting
             {
                 stamina += Time.deltaTime * staminaRegeneratedPerSecond; // Regenerate stamina
-                UpdateText.Instance.UpdateStamina(stamina); // Update stamina UI
+                UpdateText.UpdateStamina(stamina); // Update stamina UI
                 if (stamina > 100f) stamina = 100f; // Cap stamina at 100
             }
         }
