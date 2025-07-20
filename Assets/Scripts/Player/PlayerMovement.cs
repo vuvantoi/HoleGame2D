@@ -35,7 +35,7 @@ public class PlayerMovement : MonoBehaviour
     {
         // This method can be used to trigger fast running logic if needed
         // Currently, it does nothing but can be expanded later
-        if (Input.GetKey(KeyCode.Space) && stamina >= staminaCostPerSecond)
+        if (Input.GetKey(KeyCode.Space) && stamina > 0)
         {
             //check if player is moving
             if (rb.linearVelocity.magnitude > 0)
@@ -47,7 +47,7 @@ public class PlayerMovement : MonoBehaviour
             if (stamina < 0) stamina = 0; // Prevent negative stamina
             moveSpeed = fasterMoveSpeed;
         }
-        else if (UpdateText.Instance.isSprintButtonPressed && stamina >= staminaCostPerSecond) //check if ui button is pressed
+        else if (UpdateText.Instance.isSprintButtonPressed && stamina > 0) //check if ui button is pressed
         {
             // You can handle sprint logic here if needed
             // For example, set moveSpeed = fasterMoveSpeed;
