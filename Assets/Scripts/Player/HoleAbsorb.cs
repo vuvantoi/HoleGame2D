@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 [RequireComponent(typeof(HoleSize))]
-public class HoleAbsorb : MonoBehaviour
+public class HoleAbsorb : MonoBehaviour, IAbsorbable
 {
     private HoleSize holeSize;
     // define audio clip
@@ -28,7 +28,7 @@ public class HoleAbsorb : MonoBehaviour
     {
         return target.GetSize() < holeSize.CurrentSize;
     }
-    private void Absorb(AbsorbableObject target)
+    public void Absorb(AbsorbableObject target)
     {
         float score = target.GetScore();
        
