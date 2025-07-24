@@ -872,6 +872,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   normalMoveSpeed: 5
   fasterMoveSpeed: 10
+  stamina: 100
+  staminaCostPerSecond: 30
+  staminaRegeneratedPerSecond: 10
 --- !u!58 &1002408165
 CircleCollider2D:
   m_ObjectHideFlags: 0
