@@ -1,39 +1,95 @@
-﻿using Unity.VisualScripting;
-using UnityEngine;
+﻿using UnityEngine;
 using System.Linq;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class BotMovement : MonoBehaviour
 {
-    [Header("Bot Settings")]
-    [SerializeField] private float moveSpeed = 3f;
-    [SerializeField] private float targetRefreshInterval = 1f;
+    [Header("Movement Settings")]
+    [SerializeField] private float walkSpeed = 3f;
+    [SerializeField] private float sprintSpeed = 7f;
+
+    [Header("Stamina Settings")]
+    [SerializeField] private float curStamina = 100f;
+    [SerializeField] private float maxStamina = 100f;
+    [SerializeField] private float minStamina = 0f;
+    [SerializeField] private float staminaRecoveryRate = 5f;
+    [SerializeField] private float staminaDrainRate = 25f;
+
+    [Header("AI Settings")]
+    [SerializeField] private float targetRefreshInterval = 0.5f;
+    [SerializeField] private float dangerDetectionRange = 7f;
+    [SerializeField] private float chaseStopRange = 14f;
 
     private Rigidbody2D rb;
-    private float refreshTimer = 1f;
-    private Transform currentTarget;
-    private Transform closestDangerousTarget = null;
     private BotSize botSize;
+
+    private float refreshTimer;
+
+    private Transform currentTarget;
     private bool isDangerous = false;
-    private float minDangerousDistance = 7f; // Khoảng cách tối thieeu voi ng choi/bot lon hon
-    private bool isTargetDangerous = false; // check xem target co phai ng choi/bot ko
+    private bool isChasing = false;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         botSize = GetComponent<BotSize>();
+
         if (botSize == null)
-            Debug.LogError($"{gameObject.name} thiếu BotSize!");
+            Debug.LogError($"{gameObject.name} is missing BotSize component!");
     }
 
     private void Update()
     {
-        refreshTimer -= Time.deltaTime;
-        if (refreshTimer <= 0f || currentTarget == null || !currentTarget.gameObject.activeInHierarchy)
+        dangerDetectionRange = botSize.GetSize() * 3f;
+        chaseStopRange = dangerDetectionRange;
+
+        HandleStamina();
+        DetectImmediateDanger(); // << Detect danger every frame
+        HandleTargetLogic();
+        HandleMovement();
+    }
+
+    private void HandleStamina()
+    {
+        if (curStamina < maxStamina)
         {
-            FindNearestTarget();
-            refreshTimer = targetRefreshInterval;
+            curStamina += staminaRecoveryRate * Time.deltaTime;
+            curStamina = Mathf.Min(curStamina, maxStamina);
         }
 
+        if ((isChasing || isDangerous) && curStamina > minStamina)
+        {
+            curStamina -= staminaDrainRate * Time.deltaTime;
+            curStamina = Mathf.Max(curStamina, minStamina);
+        }
+    }
+
+    private void HandleTargetLogic()
+    {
+        refreshTimer -= Time.deltaTime;
+
+        if (isDangerous)
+            return; // Don't override danger target
+
+        if (isChasing && currentTarget != null)
+        {
+            float dist = Vector2.Distance(transform.position, currentTarget.position);
+            if (dist > chaseStopRange)
+            {
+                isChasing = false;
+                currentTarget = null;
+            }
+        }
+
+        if (refreshTimer <= 0f || currentTarget == null || !currentTarget.gameObject.activeInHierarchy)
+        {
+            FindChaseOrFoodTarget();
+            refreshTimer = targetRefreshInterval;
+        }
+    }
+
+    private void HandleMovement()
+    {
         if (currentTarget == null)
         {
             rb.linearVelocity = Vector2.zero;
@@ -50,88 +106,143 @@ public class BotMovement : MonoBehaviour
         }
     }
 
-    private void FindNearestTarget()
+    private void DetectImmediateDanger()
     {
-        // Combine all potential targets and filter out self and inactive objects
-        GameObject[] targets = GameObject.FindGameObjectsWithTag("Object")
+        GameObject[] potentialThreats = GameObject.FindGameObjectsWithTag("Bot")
+            .Concat(GameObject.FindGameObjectsWithTag("Player"))
+            .Where(go => go != gameObject && go.activeInHierarchy)
+            .ToArray();
+
+        float mySize = botSize.GetSize();
+        float closestDist = float.MaxValue;
+        Transform danger = null;
+
+        foreach (var target in potentialThreats)
+        {
+            float targetSize = 0f;
+
+            if (target.CompareTag("Bot"))
+            {
+                var sizeComp = target.GetComponent<BotSize>();
+                if (sizeComp == null) continue;
+                targetSize = sizeComp.CurrentSize;
+            }
+            else if (target.CompareTag("Player"))
+            {
+                var sizeComp = target.GetComponent<HoleSize>();
+                if (sizeComp == null) continue;
+                targetSize = sizeComp.CurrentSize;
+            }
+
+            float dist = Vector2.Distance(transform.position, target.transform.position);
+            if (targetSize >= mySize && dist < dangerDetectionRange && dist < closestDist)
+            {
+                closestDist = dist;
+                danger = target.transform;
+            }
+        }
+
+        if (danger != null)
+        {
+            isDangerous = true;
+            isChasing = false;
+            currentTarget = danger;
+        }
+        else if (isDangerous)
+        {
+            // Reset danger if threat gone
+            isDangerous = false;
+            currentTarget = null;
+        }
+    }
+
+    private void FindChaseOrFoodTarget()
+    {
+        GameObject[] allTargets = GameObject.FindGameObjectsWithTag("Object")
             .Concat(GameObject.FindGameObjectsWithTag("Bot"))
             .Concat(GameObject.FindGameObjectsWithTag("Player"))
             .Where(go => go != gameObject && go.activeInHierarchy)
             .ToArray();
 
-        float botCurrentSize = botSize.GetSize();
-        float minDangerousDist = float.MaxValue;
-        closestDangerousTarget = null; // Reset closest dangerous target for each refresh
-
-        // 1. Check for dangerous targets first (bigger bots/players)
-        foreach (var target in targets)
-        {
-            bool isBot = (target.tag == "Bot");
-            bool isPlayer = (target.tag == "Player");
-
-            float targetSize = 0f;
-            if (isPlayer) targetSize = target.GetComponent<HoleSize>().CurrentSize;
-            else if (isBot) targetSize = target.GetComponent<BotSize>().CurrentSize;
-            else continue; // Not a bot or player, so not a dangerous target in this context
-
-            isTargetDangerous = (targetSize >= botCurrentSize);
-
-            if (isTargetDangerous)
-            {
-                float dist = Vector2.Distance(transform.position, target.transform.position);
-                if (dist < minDangerousDist)
-                {
-                    minDangerousDist = dist;
-                    closestDangerousTarget = target.transform;
-                }
-            }
-        }
-    
-
-        // 2. Decide whether to flee or hunt. Priority is to flee from danger.
-        if (closestDangerousTarget != null && minDangerousDist < minDangerousDistance)
-        {
-            isDangerous = true;
-            currentTarget = closestDangerousTarget;
-            return; // Fleeing, so we don't need to look for food.
-        }
-
-        // 3. If not fleeing, find the nearest food (smaller objects).
-        Debug.Log("Eating");
-        Transform nearestFood = null;
-        isDangerous = false;
+        float mySize = botSize.GetSize();
+        float minChaseDist = float.MaxValue;
         float minFoodDist = float.MaxValue;
 
-        foreach (var target in targets)
-        {
-            var absorbable = target.GetComponent<AbsorbableObject>();
-            if (absorbable == null || absorbable.GetSize() >= botCurrentSize) continue;
+        Transform chaseTarget = null;
+        Transform foodTarget = null;
 
-            float dist = Vector2.Distance(transform.position, target.transform.position);
-            if (dist < minFoodDist)
+        foreach (var target in allTargets)
+        {
+            float targetSize = 0f;
+
+            if (target.CompareTag("Bot"))
             {
-                minFoodDist = dist;
-                nearestFood = target.transform;
+                var sizeComp = target.GetComponent<BotSize>();
+                if (sizeComp == null) continue;
+                targetSize = sizeComp.CurrentSize;
+            }
+            else if (target.CompareTag("Player"))
+            {
+                var sizeComp = target.GetComponent<HoleSize>();
+                if (sizeComp == null) continue;
+                targetSize = sizeComp.CurrentSize;
+            }
+            else if (target.CompareTag("Object"))
+            {
+                var food = target.GetComponent<AbsorbableObject>();
+                if (food == null || food.GetSize() >= mySize) continue;
+
+                float dist = Vector2.Distance(transform.position, target.transform.position);
+                if (dist < minFoodDist)
+                {
+                    foodTarget = target.transform;
+                    minFoodDist = dist;
+                }
+
+                continue;
+            }
+
+            // Chase logic
+            float chaseDist = Vector2.Distance(transform.position, target.transform.position);
+            if (targetSize < mySize && chaseDist < chaseStopRange && chaseDist < minChaseDist)
+            {
+                chaseTarget = target.transform;
+                minChaseDist = chaseDist;
             }
         }
 
-        currentTarget = nearestFood;
+        if (chaseTarget != null)
+        {
+            isChasing = true;
+            currentTarget = chaseTarget;
+        }
+        else if (foodTarget != null)
+        {
+            isChasing = false;
+            currentTarget = foodTarget;
+        }
+        else
+        {
+            isChasing = false;
+            currentTarget = null;
+        }
     }
-
 
     private void MoveTowardsTarget()
     {
         if (currentTarget == null) return;
 
         Vector2 direction = ((Vector2)currentTarget.position - rb.position).normalized;
-        rb.linearVelocity = direction * moveSpeed;
+        float speed = (curStamina > minStamina && isChasing) ? sprintSpeed : walkSpeed;
+        rb.linearVelocity = direction * speed;
     }
+
     private void MoveAwayFromTarget()
     {
         if (currentTarget == null) return;
 
         Vector2 direction = (rb.position - (Vector2)currentTarget.position).normalized;
-        rb.linearVelocity = direction * moveSpeed;
+        rb.linearVelocity = direction * walkSpeed;
     }
 
     private void OnDisable()
