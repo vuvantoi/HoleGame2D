@@ -42,7 +42,7 @@ public class BotMovement : MonoBehaviour
     {
         dangerDetectionRange = botSize.GetSize() * 3f;
         chaseStopRange = dangerDetectionRange;
-
+        //if (!this.gameObject.activeInHierarchy) return;
         HandleStamina();
         DetectImmediateDanger(); // << Detect danger every frame
         HandleTargetLogic();
@@ -125,7 +125,7 @@ public class BotMovement : MonoBehaviour
             {
                 var sizeComp = target.GetComponent<BotSize>();
                 if (sizeComp == null) continue;
-                targetSize = sizeComp.CurrentSize;
+                targetSize = sizeComp.GetSize();
             }
             else if (target.CompareTag("Player"))
             {
@@ -179,7 +179,7 @@ public class BotMovement : MonoBehaviour
             {
                 var sizeComp = target.GetComponent<BotSize>();
                 if (sizeComp == null) continue;
-                targetSize = sizeComp.CurrentSize;
+                targetSize = sizeComp.GetSize();
             }
             else if (target.CompareTag("Player"))
             {
