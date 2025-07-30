@@ -23,7 +23,7 @@ public class BotMovement : MonoBehaviour
     private Rigidbody2D rb;
     private BotSize botSize;
 
-    private float refreshTimer;
+    private float refreshTimer = 0.5f;
 
     private Transform currentTarget;
     private bool isDangerous = false;
@@ -135,7 +135,7 @@ public class BotMovement : MonoBehaviour
             }
 
             float dist = Vector2.Distance(transform.position, target.transform.position);
-            if (targetSize >= mySize && dist < dangerDetectionRange && dist < closestDist)
+            if (targetSize > mySize && dist < dangerDetectionRange && dist < closestDist)
             {
                 closestDist = dist;
                 danger = target.transform;

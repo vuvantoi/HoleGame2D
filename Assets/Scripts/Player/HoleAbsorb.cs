@@ -111,7 +111,7 @@ public class HoleAbsorb : MonoBehaviour
             }
             else if (target.gameObject.tag == "Bot")
             {
-                target.gameObject.SetActive(false);
+                EnemyPoolManager.Instance.ReturnEnemyToPool(target.gameObject);
                 Debug.Log($"[PLAYER ABSORB] Absorbed Bot: {target.name}");
             }
             else if (target.gameObject.tag == "Player")

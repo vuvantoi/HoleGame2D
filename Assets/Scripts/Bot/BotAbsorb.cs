@@ -103,7 +103,7 @@ public class BotAbsorb : MonoBehaviour
             }
             else if (target.gameObject.tag == "Bot")
             {
-                target.gameObject.SetActive(false);
+                EnemyPoolManager.Instance.ReturnEnemyToPool(target.gameObject);
                 Debug.Log($"[BOT ABSORB] Absorbed Bot: {target.name}");
             }
             else if (target.gameObject.tag == "Player")
