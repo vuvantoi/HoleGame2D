@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class BotScoreManager : SingletonBase<BotScoreManager>
+public class BotScoreManager : MonoBehaviour
 {
     [Header("Level Data")]
     public HoleLevelData[] levels;

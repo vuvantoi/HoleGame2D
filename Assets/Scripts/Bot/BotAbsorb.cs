@@ -5,11 +5,13 @@ public class BotAbsorb : MonoBehaviour
 {
     private BotSize botSize;
     private BotMovement botMovement;
+    private BotScoreManager botScore;
 
     private void Awake()
     {
         botMovement = GetComponent<BotMovement>();
         botSize = GetComponent<BotSize>();
+        botScore = GetComponent<BotScoreManager>();
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -37,7 +39,7 @@ public class BotAbsorb : MonoBehaviour
         float score = target.GetScore();
 
         // Cộng điểm 
-        BotScoreManager.Instance.AddScore(score);
+        botScore.AddScore(score);
         // set state cho bot
         botMovement.SetStateToAbsorbing();
         // Bắt đầu hút mà KHÔNG phát âm thanh

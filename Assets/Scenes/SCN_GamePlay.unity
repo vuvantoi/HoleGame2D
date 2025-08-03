@@ -866,6 +866,7 @@ GameObject:
   - component: {fileID: 882376653}
   - component: {fileID: 882376652}
   - component: {fileID: 882376654}
+  - component: {fileID: 882376655}
   m_Layer: 0
   m_Name: Bot
   m_TagString: Bot
@@ -1036,6 +1037,42 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 0.5
+--- !u!114 &882376655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 882376646}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc4a4bcf9ab44f64e902934149987aca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  levels:
+  - {fileID: 11400000, guid: 5801ce17c72922449948b47c76d3b2a8, type: 2}
+  - {fileID: 11400000, guid: 75c31038624d63a48b41818f9a7d21dd, type: 2}
+  - {fileID: 11400000, guid: 5987aebbcb02aa04f9924e52427b263f, type: 2}
+  - {fileID: 11400000, guid: bc67915fdf07c1940af5494707d7e3f0, type: 2}
+  - {fileID: 11400000, guid: 6d93c538859faa140ab0ef6ca968f7d6, type: 2}
+  - {fileID: 11400000, guid: a4d184ece1fd1d94fa96fe466f537b08, type: 2}
+  - {fileID: 11400000, guid: 16dbd6df7b2d55d41bcd804970ac1f13, type: 2}
+  - {fileID: 11400000, guid: 26fe759a2895a4746b812cc4a3a03ce0, type: 2}
+  - {fileID: 11400000, guid: 665c0957542de6a448aa6372391f987a, type: 2}
+  - {fileID: 11400000, guid: fefc2b2d20b67e1449ca169bca2130fe, type: 2}
+  - {fileID: 11400000, guid: 74a28b43e3a51cb479fac6bc8a0a41f9, type: 2}
+  - {fileID: 11400000, guid: 901a54f1843e2284990576fde16b461f, type: 2}
+  - {fileID: 11400000, guid: db66a493a551fce4f92ae10d18c2b377, type: 2}
+  - {fileID: 11400000, guid: 32bcadb0ebb0e1a46abfa37a83da9629, type: 2}
+  - {fileID: 11400000, guid: d9609db55db3ec54288b180154585eed, type: 2}
+  - {fileID: 11400000, guid: 3c9b5344093c567489f1d89cb4c7d8c3, type: 2}
+  - {fileID: 11400000, guid: 5b8ab3e2ff8422a4081b685cb6a3212e, type: 2}
+  - {fileID: 11400000, guid: 7a9b07d9145294b4f96ba5ebb9881670, type: 2}
+  - {fileID: 11400000, guid: 1f7c6609786917b4e9c4d94fef5dfe72, type: 2}
+  - {fileID: 11400000, guid: e2524642407727148922912b2fbec4bb, type: 2}
+  startLevelIndex: 0
+  totalScore: 0
+  debugLevelIndex: 0
 --- !u!4 &886951077 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8676412379591768511, guid: 4b80599589813834b82d905d7cc78c99, type: 3}
@@ -2447,7 +2484,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 882376646}
-  poolSize: 20
+  poolSize: 1
   respawnTime: 5
   spawnAreaCenter: {x: 0, y: 0, z: 0}
   spawnAreaSize: {x: 200, y: 200, z: 0}
