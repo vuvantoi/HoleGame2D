@@ -4,9 +4,11 @@
 public class BotAbsorb : MonoBehaviour
 {
     private BotSize botSize;
+    private BotMovement botMovement;
 
     private void Awake()
     {
+        botMovement = GetComponent<BotMovement>();
         botSize = GetComponent<BotSize>();
     }
 
@@ -37,10 +39,10 @@ public class BotAbsorb : MonoBehaviour
         // Cộng điểm 
         BotScoreManager.Instance.AddScore(score);
         // set state cho bot
-        BotMovement.Instance.SetStateToAbsorbing();
+        botMovement.SetStateToAbsorbing();
         // Bắt đầu hút mà KHÔNG phát âm thanh
         StartCoroutine(AbsorbRoutine(target.transform));
-        BotMovement.Instance.SetStateToSeekingFood();
+        botMovement.SetStateToSeekingFood();
         // Debug hoặc tuỳ chỉnh khác nếu muốn
         Debug.Log($"[BOT ABSORB] Absorbed: {target.name}, Score: {score}");
     }

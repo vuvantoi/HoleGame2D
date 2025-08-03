@@ -2,7 +2,7 @@
 using System.Linq; // Make sure this is included for Concat and Where
 
 [RequireComponent(typeof(Rigidbody2D))]
-public class BotMovement : SingletonBase<BotMovement>
+public class BotMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
     [SerializeField] private float walkSpeed = 3f;
@@ -44,9 +44,8 @@ public class BotMovement : SingletonBase<BotMovement>
 
     private BotState currentState = BotState.Idle; // Bot starts idle, will transition to seeking food
 
-    private new void Awake()
+    private void Awake()
     {
-        base.Awake();
         rb = GetComponent<Rigidbody2D>();
         botSize = GetComponent<BotSize>();
 
@@ -56,6 +55,7 @@ public class BotMovement : SingletonBase<BotMovement>
     
     private void Start()
     {
+        targetRefreshInterval = Random.Range(0.1f, 0.5f); // Ensure it's not too low
         // Start the refresh timer so the bot doesn't immediately become Idle.
         // This ensures the bot starts looking for a target immediately.
         refreshTimer = targetRefreshInterval;
