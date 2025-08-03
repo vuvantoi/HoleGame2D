@@ -145,7 +145,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &114406195
 Transform:
   m_ObjectHideFlags: 0
@@ -2484,7 +2484,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 882376646}
-  poolSize: 1
+  poolSize: 20
   respawnTime: 5
   spawnAreaCenter: {x: 0, y: 0, z: 0}
   spawnAreaSize: {x: 200, y: 200, z: 0}
