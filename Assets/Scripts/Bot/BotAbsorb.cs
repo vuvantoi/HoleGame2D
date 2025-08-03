@@ -36,10 +36,11 @@ public class BotAbsorb : MonoBehaviour
 
         // Cộng điểm 
         BotScoreManager.Instance.AddScore(score);
-
+        // set state cho bot
+        BotMovement.Instance.SetStateToAbsorbing();
         // Bắt đầu hút mà KHÔNG phát âm thanh
         StartCoroutine(AbsorbRoutine(target.transform));
-
+        BotMovement.Instance.SetStateToSeekingFood();
         // Debug hoặc tuỳ chỉnh khác nếu muốn
         Debug.Log($"[BOT ABSORB] Absorbed: {target.name}, Score: {score}");
     }

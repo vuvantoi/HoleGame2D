@@ -2,7 +2,7 @@
 using System.Linq; // Make sure this is included for Concat and Where
 
 [RequireComponent(typeof(Rigidbody2D))]
-public class BotMovement : MonoBehaviour
+public class BotMovement : SingletonBase<BotMovement>
 {
     [Header("Movement Settings")]
     [SerializeField] private float walkSpeed = 3f;
@@ -16,7 +16,7 @@ public class BotMovement : MonoBehaviour
     [SerializeField] private float staminaDrainRate = 25f;
 
     [Header("AI Settings")]
-    [SerializeField] private float targetRefreshInterval = 0.5f; // How often to search for new targets
+    [SerializeField] private float targetRefreshInterval = 0.3f; // How often to search for new targets
     [SerializeField] private float dangerDetectionRange = 7f;
     [SerializeField] private float chaseStopRange = 14f; // Distance to stop chasing if target gets too far
     [SerializeField] private float dangerClearanceRangeOffset = 2f; // Added for hysteresis when clearing danger
@@ -25,7 +25,7 @@ public class BotMovement : MonoBehaviour
     private Rigidbody2D rb;
     private BotSize botSize;
 
-    private float refreshTimer = 0f; // Initialize to 0 so it searches immediately on start
+    private float refreshTimer; // No longer initialized to 0, will be set on start
     private float actionDelayTimer = 0f; // Used for post-action delays
 
     private Transform currentTarget;
@@ -38,29 +38,45 @@ public class BotMovement : MonoBehaviour
         Idle,
         SeekingFood,
         ChasingPrey,
-        FleeingDanger
+        FleeingDanger,
+        Absorbing // New state to handle absorption without movement
     }
 
     private BotState currentState = BotState.Idle; // Bot starts idle, will transition to seeking food
 
-    private void Awake()
+    private new void Awake()
     {
+        base.Awake();
         rb = GetComponent<Rigidbody2D>();
         botSize = GetComponent<BotSize>();
 
         if (botSize == null)
             Debug.LogError($"{gameObject.name} is missing BotSize component!");
     }
+    
+    private void Start()
+    {
+        // Start the refresh timer so the bot doesn't immediately become Idle.
+        // This ensures the bot starts looking for a target immediately.
+        refreshTimer = targetRefreshInterval;
+    }
 
     private void Update()
     {
         // Dynamic range calculation should always happen
-        if (refreshTimer < 0) refreshTimer = 1f; // Ensure timer doesn't go negative
         dangerDetectionRange = botSize.GetSize() * 3f;
         chaseStopRange = dangerDetectionRange; // Keeping this linked for now as per your original logic
 
+        // *** REVISED TIMER LOGIC: Decrement and clamp timers in one place. ***
+        // This is a cleaner, more reliable way to manage them.
+        refreshTimer -= Time.deltaTime;
+        refreshTimer = Mathf.Max(0f, refreshTimer);
+
+        actionDelayTimer -= Time.deltaTime;
+        actionDelayTimer = Mathf.Max(0f, actionDelayTimer);
+        // *** END OF REVISED TIMER LOGIC ***
+
         HandleStamina();
-        actionDelayTimer -= Time.deltaTime; // Decrement action delay timer
 
         // Always detect immediate danger, as it's the highest priority behavior.
         // This will set 'isDangerous' and 'currentTarget' if a danger is found.
@@ -70,13 +86,16 @@ public class BotMovement : MonoBehaviour
         switch (currentState)
         {
             case BotState.FleeingDanger:
-                // If we were fleeing but no longer detect danger, transition out of Fleeing.
-                // The 'isDangerous' flag is set by DetectImmediateDanger.
-                if (!isDangerous && actionDelayTimer <= 0f)
+                if (!isDangerous) // Only check for transition if no longer in danger
                 {
-                    currentState = BotState.SeekingFood; // Default to seeking food after fleeing
-                    currentTarget = null; // Clear fleeing target
-                    actionDelayTimer = postActionDelay; // Short delay before seeking
+                    // Wait for action delay after fleeing before transitioning
+                    if (actionDelayTimer <= 0f)
+                    {
+                        currentState = BotState.SeekingFood; // Default to seeking food after fleeing
+                        currentTarget = null; // Clear fleeing target
+                        actionDelayTimer = postActionDelay; // Short delay before seeking
+                        refreshTimer = 0f; // Force an immediate refresh to find a new target
+                    }
                 }
                 break;
 
@@ -96,23 +115,43 @@ public class BotMovement : MonoBehaviour
                 break;
 
             case BotState.Idle:
-                // If no target and not dangerous, try to find a target to start seeking food/chasing
-                if (!isDangerous && (refreshTimer <= 0f || currentTarget == null || !currentTarget.gameObject.activeInHierarchy) && actionDelayTimer <= 0f)
+                // Only try to find a new target if the refresh timer has expired
+                if (refreshTimer <= 0f)
                 {
-                    FindChaseOrFoodTarget(); // Attempt to find an initial target
+                    FindChaseOrFoodTarget();
                     refreshTimer = targetRefreshInterval; // Reset refresh timer
-
+                    
                     if (currentTarget != null) // If a target was found, transition to appropriate state
                     {
                         currentState = isChasing ? BotState.ChasingPrey : BotState.SeekingFood;
                     }
-                    // If no target found, remains Idle and will try again after refreshTimer
+                    // If no target found, it remains in Idle and will try again after refreshTimer
                 }
+                break;
+            
+            // NEW: The bot does nothing while in the absorbing state.
+            case BotState.Absorbing:
+                // The absorb script is responsible for transitioning out of this state
                 break;
         }
 
         // Handle Movement based on the determined state
         HandleMovement();
+    }
+
+    // NEW: Public method to be called by your absorb script
+    public void SetStateToAbsorbing()
+    {
+        currentState = BotState.Absorbing;
+        rb.linearVelocity = Vector2.zero; // Immediately stop all movement
+        //wait for 0.5 second then set state to idle
+    }
+    public void SetStateToSeekingFood()
+    {
+        currentState = BotState.SeekingFood;
+        currentTarget = null; // Clear target when going idle
+        actionDelayTimer = postActionDelay; // Reset action delay timer
+        refreshTimer = targetRefreshInterval; // Reset refresh timer for next target search
     }
 
     private void HandleStamina()
@@ -134,8 +173,6 @@ public class BotMovement : MonoBehaviour
     // Handles finding and managing food/chase targets when not in FleeingDanger state
     private void HandleTargetLogic()
     {
-        refreshTimer -= Time.deltaTime;
-
         // Determine if the current target is no longer valid (e.g., eaten, disabled, or too far for chasing)
         bool currentTargetLost = currentTarget == null || !currentTarget.gameObject.activeInHierarchy;
 
@@ -151,23 +188,16 @@ public class BotMovement : MonoBehaviour
             }
         }
 
-        // If a target was just lost, activate the action delay timer to prevent immediate re-targeting
-        if (currentTargetLost && actionDelayTimer <= 0f)
-        {
-            actionDelayTimer = postActionDelay; // Start the delay
-        }
-
         // Find a new target only if:
         // 1. The regular refresh interval is met, OR we just lost our current target.
         // 2. AND the action delay timer has run out (prevents immediate search after losing a target).
-        // This ensures the bot waits a moment before finding a new target after eating or losing one.
         if ((refreshTimer <= 0f || currentTargetLost) && actionDelayTimer <= 0f)
         {
             FindChaseOrFoodTarget();
             refreshTimer = targetRefreshInterval; // Reset timer regardless of whether a target was found
         }
-
-        // Update current state based on what FindChaseOrFoodTarget found
+        
+        // --- REVISED: Update state based on currentTarget at the end of the logic ---
         if (currentTarget != null)
         {
             if (isChasing)
@@ -183,6 +213,12 @@ public class BotMovement : MonoBehaviour
 
     private void HandleMovement()
     {
+        // *** REVISED: Do not move if the bot is in the Absorbing state. ***
+        if (currentState == BotState.Absorbing)
+        {
+            return;
+        }
+        
         // If no current target or in Idle state, stop movement
         if (currentTarget == null || currentState == BotState.Idle)
         {
@@ -204,8 +240,6 @@ public class BotMovement : MonoBehaviour
     // Detects larger entities (Bots or Players) that are a danger
     private void DetectImmediateDanger()
     {
-        // Optimization: For performance, consider using Physics2D.OverlapCircleAll with LayerMasks
-        // if your game has many objects. For now, keeping your FindGameObjectsWithTag approach.
         GameObject[] potentialThreats = GameObject.FindGameObjectsWithTag("Bot")
             .Concat(GameObject.FindGameObjectsWithTag("Player"))
             .Where(go => go != gameObject && go.activeInHierarchy)
@@ -227,7 +261,7 @@ public class BotMovement : MonoBehaviour
             }
             else if (target.CompareTag("Player"))
             {
-                var sizeComp = target.GetComponent<HoleSize>(); // Assuming player has HoleSize
+                var sizeComp = target.GetComponent<HoleSize>();
                 if (sizeComp == null) continue;
                 targetSize = sizeComp.CurrentSize;
             }
@@ -241,33 +275,27 @@ public class BotMovement : MonoBehaviour
             }
         }
 
-        // If a danger is found
         if (danger != null)
         {
             isDangerous = true;
-            currentTarget = danger; // Set danger as current target for movement
-            currentState = BotState.FleeingDanger; // Explicitly set state to fleeing
+            currentTarget = danger;
+            currentState = BotState.FleeingDanger;
         }
         else if (isDangerous) // If we were previously dangerous but now no immediate threat
         {
-            // Apply hysteresis: only clear danger if the target is sufficiently far away
-            // This prevents rapid flickering between fleeing and seeking if a threat is at the edge of the range
             if (currentTarget == null || !currentTarget.gameObject.activeInHierarchy || Vector2.Distance(transform.position, currentTarget.position) > (dangerDetectionRange + dangerClearanceRangeOffset))
             {
-                isDangerous = false; // Clear danger status
-                // The state transition (e.g., to SeekingFood) will be handled in the Update loop
+                isDangerous = false;
             }
         }
     }
 
-    // Finds the closest absorbable food object or a smaller bot/player to chase
     private void FindChaseOrFoodTarget()
     {
-        // Optimization: Consider Physics2D.OverlapCircleAll if performance is an issue
-        GameObject[] allTargets = GameObject.FindGameObjectsWithTag("Object") // Absorbable food
-            .Concat(GameObject.FindGameObjectsWithTag("Bot")) // Other bots
-            .Concat(GameObject.FindGameObjectsWithTag("Player")) // Player
-            .Where(go => go != gameObject && go.activeInHierarchy) // Exclude self and inactive objects
+        GameObject[] allTargets = GameObject.FindGameObjectsWithTag("Object")
+            .Concat(GameObject.FindGameObjectsWithTag("Bot"))
+            .Concat(GameObject.FindGameObjectsWithTag("Player"))
+            .Where(go => go != gameObject && go.activeInHierarchy)
             .ToArray();
 
         float mySize = botSize.GetSize();
@@ -293,10 +321,9 @@ public class BotMovement : MonoBehaviour
                 if (sizeComp == null) continue;
                 targetSize = sizeComp.CurrentSize;
             }
-            else if (target.CompareTag("Object")) // It's an absorbable food object
+            else if (target.CompareTag("Object"))
             {
                 var food = target.GetComponent<AbsorbableObject>();
-                // Bot can only eat objects smaller than itself
                 if (food == null || food.GetSize() >= mySize) continue;
 
                 float dist = Vector2.Distance(transform.position, target.transform.position);
@@ -305,10 +332,9 @@ public class BotMovement : MonoBehaviour
                     foodTarget = target.transform;
                     minFoodDist = dist;
                 }
-                continue; // Move to the next target after processing this object
+                continue;
             }
 
-            // Logic for chasing other bots or players (must be smaller than us)
             float chaseDist = Vector2.Distance(transform.position, target.transform.position);
             if (targetSize < mySize && chaseDist < chaseStopRange && chaseDist < minChaseDist)
             {
@@ -317,7 +343,6 @@ public class BotMovement : MonoBehaviour
             }
         }
 
-        // Prioritize chasing a smaller bot/player over eating food
         if (chaseTarget != null)
         {
             isChasing = true;
@@ -325,10 +350,10 @@ public class BotMovement : MonoBehaviour
         }
         else if (foodTarget != null)
         {
-            isChasing = false; // Not "chasing" a bot/player, but seeking food
+            isChasing = false;
             currentTarget = foodTarget;
         }
-        else // No valid chase or food target found
+        else
         {
             isChasing = false;
             currentTarget = null;
@@ -340,7 +365,6 @@ public class BotMovement : MonoBehaviour
         if (currentTarget == null) return;
 
         Vector2 direction = ((Vector2)currentTarget.position - rb.position).normalized;
-        // Sprint only if in ChasingPrey state and has enough stamina
         float speed = (currentState == BotState.ChasingPrey && curStamina > minStamina) ? sprintSpeed : walkSpeed;
         rb.linearVelocity = direction * speed;
     }
@@ -350,7 +374,6 @@ public class BotMovement : MonoBehaviour
         if (currentTarget == null) return;
 
         Vector2 direction = (rb.position - (Vector2)currentTarget.position).normalized;
-        // Fleeing typically uses walk speed to conserve stamina
         rb.linearVelocity = direction * walkSpeed;
     }
 
@@ -359,41 +382,36 @@ public class BotMovement : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
     }
 
-    // Optional: Visual debugging in editor (requires UnityEditor for Handles.Label)
     private void OnDrawGizmosSelected()
     {
         if (rb == null || botSize == null) return;
 
-        // Draw Danger Detection Range
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, dangerDetectionRange);
 
-        // Draw Chase/Food Search Range (if different, currently linked)
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, chaseStopRange);
 
-        // Draw currentTarget line
         if (currentTarget != null)
         {
             switch (currentState)
             {
                 case BotState.FleeingDanger:
-                    Gizmos.color = Color.magenta; // Fleeing
+                    Gizmos.color = Color.magenta;
                     break;
                 case BotState.ChasingPrey:
-                    Gizmos.color = Color.blue;   // Chasing
+                    Gizmos.color = Color.blue;
                     break;
                 case BotState.SeekingFood:
-                    Gizmos.color = Color.green;  // Seeking food
+                    Gizmos.color = Color.green;
                     break;
                 default:
-                    Gizmos.color = Color.gray; // Idle or unhandled state
+                    Gizmos.color = Color.gray;
                     break;
             }
             Gizmos.DrawLine(transform.position, currentTarget.position);
         }
 
-        // Display current state and timer in editor for debugging
         #if UNITY_EDITOR
         GUIStyle style = new GUIStyle();
         style.normal.textColor = Color.white;
