@@ -16,7 +16,7 @@ public class BotScoreManager : MonoBehaviour
 
     private void Start()
     {
-        botSize = FindAnyObjectByType<BotSize>();
+        botSize = GetComponent<BotSize>();
         if (botSize == null) Debug.LogError($"{gameObject.name} thiếu BotSize!");
         currentLevelIndex = Mathf.Clamp(startLevelIndex, 0, levels.Length - 1);
         totalScore = levels[currentLevelIndex].requiredScore;
